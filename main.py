@@ -7,15 +7,15 @@ import glob
 import re
 
 # Initialize the pressure grid with higher values on the left side
-definition = 16
+definition = 50
 pressure_grid = np.zeros((definition + 2, definition + 2, definition + 2))
 pressure_grid[:, :, :definition//2 + 1] = 1.0
 velocity_grid = np.zeros((3, definition + 2, definition + 2, definition + 2))
 rho = 1.0
-mu = 0.1
-dt = 0.05
+mu = 0.01
+dt = 0.1
 dx = dy = dz = 1.0
-num_time_steps = 250
+num_time_steps = 1000
 pressure_grids, velocity_grids = [pressure_grid], [velocity_grid]
 
 def calculate_next_state(pressure_grid, velocity_grid, rho, mu, dt, dx, dy, dz):
@@ -145,6 +145,7 @@ def plot_slices(grid, title):
     
     fig.suptitle(title)
     plt.savefig(title)
+    plt.close()
 
 # Create a directory to store the data
 os.system('rm -rf ./data && mkdir data')
@@ -155,6 +156,8 @@ plot_slices(pressure_grids[-1], f"data/0")
 # Run the simulation for the specified number of time steps
 for epoch in range(1, num_time_steps + 1):
     next_pressure_grid, next_velocity_grid = calculate_next_state(pressure_grids[-1], velocity_grids[-1], rho, mu, dt, dx, dy, dz)
+    next_pressure_grid = np.nan_to_num(next_pressure_grid, nan=0)
+    next_velocity_grid = np.nan_to_num(next_velocity_grid, nan=0)
     pressure_grids.append(next_pressure_grid)
     velocity_grids.append(next_velocity_grid)
     print(f"Processed Grid at Epoch {epoch}")
