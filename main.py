@@ -2,8 +2,39 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import os
+import cv2
+import glob
+import re
+
+# Initialize the pressure grid with higher values on the left side
+definition = 16
+pressure_grid = np.zeros((definition + 2, definition + 2, definition + 2))
+pressure_grid[:, :, :definition//2 + 1] = 1.0
+velocity_grid = np.zeros((3, definition + 2, definition + 2, definition + 2))
+rho = 1.0
+mu = 0.1
+dt = 0.05
+dx = dy = dz = 1.0
+num_time_steps = 250
+pressure_grids, velocity_grids = [pressure_grid], [velocity_grid]
 
 def calculate_next_state(pressure_grid, velocity_grid, rho, mu, dt, dx, dy, dz):
+    """
+    Calculate the next state of the pressure and velocity grids using the Navier-Stokes equation.
+    
+    Parameters:
+    pressure_grid (numpy.ndarray): 3D array of pressures.
+    velocity_grid (numpy.ndarray): 4D array of velocities (shape: (3, nx, ny, nz)).
+    rho (float): Density of the fluid.
+    mu (float): Dynamic viscosity of the fluid.
+    dt (float): Time step.
+    dx (float): Grid spacing in x direction.
+    dy (float): Grid spacing in y direction.
+    dz (float): Grid spacing in z direction.
+    
+    Returns:
+    tuple: Updated pressure grid and velocity grid.
+    """
     nx, ny, nz = pressure_grid.shape
     u, v, w = velocity_grid
     
@@ -62,6 +93,13 @@ def calculate_next_state(pressure_grid, velocity_grid, rho, mu, dt, dx, dy, dz):
     return next_pressure_grid, next_velocity_grid
 
 def plot_3d_grid(grid, title):
+    """
+    Plot a 3D grid using Matplotlib.
+    
+    Parameters:
+    grid (numpy.ndarray): 3D array to plot.
+    title (str): Title of the plot.
+    """
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     
@@ -88,8 +126,14 @@ def plot_3d_grid(grid, title):
     
     plt.show()
 
-# Function to plot slices of the 3D grid
 def plot_slices(grid, title):
+    """
+    Plot slices of a 3D grid using Matplotlib.
+    
+    Parameters:
+    grid (numpy.ndarray): 3D array to plot.
+    title (str): Title of the plot.
+    """
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     slices = [grid[grid.shape[0] // 2, 1:-1, 1:-1], grid[1:-1, grid.shape[1] // 2, 1:-1], grid[1:-1, 1:-1, grid.shape[2] // 2]]
     slice_titles = ['XY Slice', 'XZ Slice', 'YZ Slice']
@@ -102,22 +146,13 @@ def plot_slices(grid, title):
     fig.suptitle(title)
     plt.savefig(title)
 
-# Initialize the pressure grid with higher values on the left side
-definition = 16
-pressure_grid = np.zeros((definition + 2, definition + 2, definition + 2)) #np.random.rand(definition + 2, definition + 2, definition + 2)
-pressure_grid[:, :, :definition//2 + 1] = 1.0
-velocity_grid = np.zeros((3, definition + 2, definition + 2, definition + 2))
-rho = 1.0
-mu = 0.1
-dt = 0.05
-dx = dy = dz = 1.0
-num_time_steps = 250
-pressure_grids, velocity_grids = [pressure_grid], [velocity_grid]
-
+# Create a directory to store the data
 os.system('rm -rf ./data && mkdir data')
 
+# Plot the initial state
 plot_slices(pressure_grids[-1], f"data/0")
 
+# Run the simulation for the specified number of time steps
 for epoch in range(1, num_time_steps + 1):
     next_pressure_grid, next_velocity_grid = calculate_next_state(pressure_grids[-1], velocity_grids[-1], rho, mu, dt, dx, dy, dz)
     pressure_grids.append(next_pressure_grid)
@@ -125,27 +160,32 @@ for epoch in range(1, num_time_steps + 1):
     print(f"Processed Grid at Epoch {epoch}")
     plot_slices(pressure_grids[-1], f"data/{epoch}")
 
-
-import cv2
-import glob
-import re
-
 def extract_number(filename):
+    """
+    Extract the number from the filename.
+    
+    Parameters:
+    filename (str): Filename to extract the number from.
+    
+    Returns:
+    int: Extracted number.
+    """
     match = re.search(r'(\d+)\.png$', filename)
     return int(match.group(1)) if match else float('inf')
 
 # Get the list of filenames and sort them by the number before .png
 filenames = sorted(glob.glob('data/*.png'), key=extract_number)
 
+# Read the images and store them in an array
 img_array = []
 for filename in filenames:
     img = cv2.imread(filename)
     height, width, layers = img.shape
-    size = (width,height)
+    size = (width, height)
     img_array.append(img)
 
-out = cv2.VideoWriter('output_video.avi',cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
-
-for i in range(len(img_array)):
-    out.write(img_array[i])
+# Create a video from the images
+out = cv2.VideoWriter('output_video.avi', cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
+for img in img_array:
+    out.write(img)
 out.release()
