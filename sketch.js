@@ -249,7 +249,14 @@ class FluidCube {
         
         this.diffuse(0, s, density, diff, dt, 4, N);
         this.advect(0, density, s, Vx, Vy, Vz, dt, N);
-        //this.decay(kappa);
+    }
+
+    isOnArcBoundary(x, y, z) {
+        const dx = x - this.arcCenter[0];
+        const dy = y - this.arcCenter[1];
+        const dz = z - this.arcCenter[2];
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        return Math.abs(dist - this.arcRadius) < 1; // Adjust for thickness tolerance
     }
 
     displayMiddleSlice() {
@@ -266,23 +273,6 @@ class FluidCube {
             }
         }
     }
-
-    addDensityColumn(amount) {
-        const N = this.size;
-        const cellWidth = width / N;
-        const cellHeight = height / N;
-        const i = Math.floor(mouseX / cellWidth);
-        const j = Math.floor(mouseY / cellHeight);
-
-        console.log(i, j);
-    
-        if (i >= 0 && i < N && j >= 0 && j < N) {
-            for (let k = 0; k < N; k++) {
-                this.addDensity(i, j, k, amount);
-            }
-        }
-
-    }    
 
     addDensityCircle(radius, amount) {
         const N = this.size;
@@ -308,62 +298,21 @@ class FluidCube {
             }
         }
     }
-
-    addPerlinNoise(scale, amount) {
-        const N = this.size;
-        for (let k = 0; k < N; k++) {
-            for (let j = 0; j < N; j++) {
-                for (let i = 0; i < N; i++) {
-                    const noiseValue = noise(i * scale, j * scale, k * scale);
-                    this.addDensity(i, j, k, noiseValue * amount);
-                }
-            }
-        }
-    }
-}
-
-class SinWaveDensity {
-    constructor(fluidCube, amplitude, frequency, phase) {
-        this.fluidCube = fluidCube;
-        this.amplitude = amplitude;
-        this.frequency = frequency;
-        this.phase = phase;
-    }
-
-    addDensity(x, y, z, time) {
-        const densityValue = this.amplitude * Math.sin(this.frequency * time + this.phase);
-        this.fluidCube.addDensity(x, y, z, densityValue);
-    }
-
-    addDensityToAllPoints(time) {
-        const N = this.fluidCube.size;
-        for (let k = 0; k < N; k++) {
-            for (let j = 0; j < N; j++) {
-                for (let i = 0; i < N; i++) {
-                    this.addDensity(i, j, k, time);
-                }
-            }
-        }
-    }
 }
 
 let simCube;
-let sinWaveDensity;
 const N = 40;
 
 function setup() {
     createCanvas(400, 400);
     simCube = new FluidCube(N, 0.01, 0.5, 0.01, 0.001);
-    sinWaveDensity = new SinWaveDensity(simCube, 10, 0.1, 0);
 }
-  
+
 function draw() {
     background(220);
     if (mouseIsPressed) {
         simCube.addDensityCircle(2, 0.25);
     }
-
-    sinWaveDensity.addDensity(N/2, N/2, N/2, millis() / 100);
 
     simCube.step();
     simCube.displayMiddleSlice();
