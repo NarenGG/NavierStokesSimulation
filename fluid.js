@@ -9,7 +9,7 @@ class FluidCube {
         const n = Math.pow(this.size, 2);
 
         this.s = new Array(n).fill(0);
-        this.density = new Array(n).fill(0.01);
+        this.density = new Array(n).fill(0); // Start with no initial density
 
         this.Vx = new Array(n).fill(0);
         this.Vy = new Array(n).fill(0);
@@ -167,8 +167,8 @@ class FluidCube {
         let density = this.density;
         let kappa = this.kappa;
 
-        this.diffuse(1, Vx0, Vx, visc, dt, 4);
-        this.diffuse(2, Vy0, Vy, visc, dt, 4);
+        this.diffuse(1, Vx0, Vx, visc, dt, 20); // Increase iterations for more stability
+        this.diffuse(2, Vy0, Vy, visc, dt, 20); // Increase iterations for more stability
 
         this.project(Vx0, Vy0, Vx, Vy, 4);
 
@@ -234,7 +234,7 @@ class DyeGenerator {
         const velocityY = this.velocity * Math.sin(angle);
 
         this.fluidCube.addDensity(this.x, this.y, this.dyeAmount);
-        this.fluidCube.addVelocity(this.x, this.y, velocityX * 2, velocityY * 2); // Increase velocity
+        this.fluidCube.addVelocity(this.x, this.y, velocityX, velocityY); // Adjust velocity
     }
 }
 
@@ -290,6 +290,7 @@ class ArcBarrier {
     }
 }
 
+/*
 let simCube;
 let dyeGenerator;
 let thetaSlider;
@@ -303,8 +304,8 @@ function setup() {
     thetaSlider.position(10, 10);
     thetaSlider.size(80);
 
-    simCube = new FluidCube(N, 0, 0.0000000000000000000000000001, 0.01, 0.0); // Increase viscosity and reduce diffusion to reduce dispersion
-    dyeGenerator = new DyeGenerator(simCube, Math.round(N / 3), N / 2, 0.7, 0.25); // High velocity
+    simCube = new FluidCube(N, 0, 0.0000000000000000000000000001, 0.1, 0.0); // Increase viscosity and reduce diffusion to reduce dispersion
+    dyeGenerator = new DyeGenerator(simCube, Math.round(N / 3), N / 2, 2, 0.25); // High velocity
     arcBarrier = new ArcBarrier(N / 2, N / 2, 10, 1, -Math.PI / 2, Math.PI / 2); // Example semi-circle arc barrier
 }
 
@@ -326,3 +327,4 @@ function draw() {
     simCube.display();
     arcBarrier.display(simCube);
 }
+*/
